@@ -1,4 +1,5 @@
 #include <iostream>
+#include "disco/disco.h"
 using namespace std;
 
 int main()
@@ -61,11 +62,19 @@ int main()
         return 1;
     }
 
+    Disco disco;
+    iniciarDisco(disco, bloqueKB, cantidadBloques);
+
+    long long bloquesLibres = contarBloquesLibres(disco);
+    long long bloquesOcupados = cantidadBloques - bloquesLibres;
+
 
     cout << "\n=== Configuracion del disco ===" << endl;
     cout << "Tamano del disco: " << discoMB << " MB" << endl;
     cout << "Tamano del bloque: " << bloqueKB << " KB" << endl;
     cout << "Cantidad de bloques: " << cantidadBloques << endl;
+    cout << "Bloques libres: " << bloquesLibres << endl;
+    cout << "Bloques ocupados: " << bloquesOcupados << endl;
     cout << "Espacio sin formar bloque: "
          << espacioRestante << " KB" << endl;
 
