@@ -46,3 +46,66 @@ bool asignarContigua(Disco &disco, Archivo &archivo, int id, int tamanoKB)
 
     return false;
 }
+
+bool asignarEnlazada(Disco &disco, Archivo &archivo, int id, int tamanoKB)
+{
+    if (tamanoKB <= 0 || disco.tamanoBloqueKB <= 0 ||
+        !archivo.bloques.empty())
+    {
+        return false;
+    }
+
+
+    // Cada bloque reserva 8 bytes para el puntero
+    long long tamanoBloque = static_cast<long long>(
+        disco.tamanoBloqueKB) * 1024;
+
+
+    long long espacioDatos = tamanoBloque - 8;
+
+
+    if (espacioDatos <= 0)
+    {
+        return false;
+    }
+
+
+    long long tamanoArchivo =
+        static_cast<long long>(tamanoKB) * 1024;
+
+
+    long long bloquesNecesarios =
+        (tamanoArchivo + espacioDatos - 1) / espacioDatos;
+
+
+    // Comprobar que existan suficientes bloques libres
+    if (contarBloquesLibres(disco) < bloquesNecesarios)
+    {
+        return false;
+    }
+
+
+    archivo.id = id;
+    archivo.tamanoKB = tamanoKB;
+
+
+    for (long long i = 0;
+         i < static_cast<long long>(disco.bloques.size()); i++)
+    {
+        if (disco.bloques[i] == 0)
+        {
+            disco.bloques[i] = 1;
+            archivo.bloques.push_back(i);
+
+
+            if (static_cast<long long>(archivo.bloques.size())
+                == bloquesNecesarios)
+            {
+                break;
+            }
+        }
+    }
+
+
+    return true;
+}

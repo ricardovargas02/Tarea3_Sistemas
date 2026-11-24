@@ -12,5 +12,6 @@ struct Archivo
 };
 
 bool asignarContigua(Disco &disco, Archivo &archivo, int id, int tamanoKB);
+bool asignarEnlazada(Disco &disco, Archivo &archivo, int id, int tamanoKB);
 
 #endif
