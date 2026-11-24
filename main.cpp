@@ -1,6 +1,8 @@
 #include <iostream>
 #include "disco/disco.h"
 #include "asignacion/asignacion.h"
+#include <random>
+#include <vector>
 using namespace std;
 
 int main()
@@ -76,8 +78,7 @@ int main()
     cout << "Cantidad de bloques: " << cantidadBloques << endl;
     cout << "Bloques libres: " << bloquesLibres << endl;
     cout << "Bloques ocupados: " << bloquesOcupados << endl;
-    cout << "Espacio sin formar bloque: "
-         << espacioRestante << " KB" << endl;
+    cout << "Espacio sin formar bloque: " << espacioRestante << " KB" << endl;
 
 
     cout << "Mecanismo: ";
@@ -91,10 +92,66 @@ int main()
         cout << "Indexada" << endl;
 
 
-    cout << "Rango de archivos: "
-         << archivoMinKB << " - "
-         << archivoMaxKB << " KB" << endl;
+    cout << "Rango de archivos: "<< archivoMinKB << " - " << archivoMaxKB << " KB" << endl;
 
+    std::mt19937 generador(std::random_device{}());
+    std::uniform_int_distribution<int> distribucion(archivoMinKB, archivoMaxKB);
+    std::vector<Archivo> archivos;
+
+    int siguienteId = 1;
+    int tamanoArchivo = distribucion(generador);
+
+    Archivo nuevoArchivo = {};
+    bool creado = false;
+
+    if (mecanismo == 1)
+    {
+        creado = asignarContigua(disco, nuevoArchivo, siguienteId, tamanoArchivo);
+    }
+    else if (mecanismo == 2)
+    {
+        creado = asignarEnlazada(disco, nuevoArchivo, siguienteId, tamanoArchivo);
+    }
+    else if (mecanismo == 3)
+    {
+        creado = asignarIndexada(disco, nuevoArchivo, siguienteId, tamanoArchivo);
+    }
+
+    if (creado)
+    {
+        archivos.push_back(nuevoArchivo);
+        siguienteId++;
+
+        cout << "\n=== Archivo creado ===" << endl;
+        cout << "ID: " << nuevoArchivo.id << endl;
+        cout << "Tamano: " << nuevoArchivo.tamanoKB << " KB" << endl;
+
+        cout << "Bloques de datos: ";
+        for (long long bloque : nuevoArchivo.bloques)
+        {
+            cout << bloque << " ";
+        }
+        cout << endl;
+
+        if (!nuevoArchivo.bloquesIndice.empty())
+        {
+            cout << "Bloques indice: ";
+            for (long long bloque : nuevoArchivo.bloquesIndice)
+            {
+                cout << bloque << " ";
+            }
+            cout << endl;
+        }
+
+        cout << "Archivos almacenados: "
+             << archivos.size() << endl;
+    }
+    else
+    {
+        cout << "\nNo se pudo crear el archivo." << endl;
+    }
+
+    cout << "Bloques libres restantes: " << contarBloquesLibres(disco) << endl;
 
     return 0;
 }
