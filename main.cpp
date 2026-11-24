@@ -1,5 +1,6 @@
 #include <iostream>
 #include "disco/disco.h"
+#include "asignacion/asignacion.h"
 using namespace std;
 
 int main()
