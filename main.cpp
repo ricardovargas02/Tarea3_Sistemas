@@ -102,10 +102,15 @@ int main()
 
     int siguienteId = 1;
     int archivosEliminados = 0;
+    long long totalAccesos = 0;
+    long long cantidadAccesos = 0;
 
     auto inicio = std::chrono::steady_clock::now();
     auto proximaCreacion = inicio + std::chrono::seconds(2);
     auto proximaEliminacion = inicio + std::chrono::seconds(30);
+    auto proximoAcceso = inicio + std::chrono::seconds(30);
+
+
 
     while (true)
     {
@@ -145,7 +150,6 @@ int main()
             cout << "\n=== Archivo creado ===" << endl;
             cout << "ID: " << nuevoArchivo.id << endl;
             cout << "Tamano: " << nuevoArchivo.tamanoKB << " KB" << endl;
-
             cout << "Bloques de datos: ";
             for (long long bloque : nuevoArchivo.bloques)
             {
@@ -165,7 +169,6 @@ int main()
 
             cout << "Archivos almacenados: " << archivos.size() << endl;
             cout << "Bloques libres restantes: " << contarBloquesLibres(disco) << endl;
-
             proximaCreacion += std::chrono::seconds(2);
         }
 
@@ -173,11 +176,9 @@ int main()
         {
             if (!archivos.empty())
             {
-                std::uniform_int_distribution<int> distribucionEliminacion(
-                    0, static_cast<int>(archivos.size()) - 1);
+                std::uniform_int_distribution<int> distribucionEliminacion(0, static_cast<int>(archivos.size()) - 1);
 
                 int posicion = distribucionEliminacion(generador);
-
                 int idEliminado = archivos[posicion].id;
 
                 for (long long bloque : archivos[posicion].bloques)
@@ -200,13 +201,83 @@ int main()
                 cout << "Bloques libres restantes: " << contarBloquesLibres(disco) << endl;
             }
 
-            proximaEliminacion += std::chrono::seconds(5);
+                  proximaEliminacion += std::chrono::seconds(5);
+        }
+
+        if (ahora >= proximoAcceso)
+        {
+            if (!archivos.empty())
+            {
+                std::uniform_int_distribution<int> distribucionArchivo(0, static_cast<int>(archivos.size()) - 1);
+
+                int posicion = distribucionArchivo(generador);
+
+                const Archivo &archivo = archivos[posicion];
+
+                long long tamanoBytes = static_cast<long long>(archivo.tamanoKB) * 1024;
+
+                std::uniform_int_distribution<long long> distribucionPosicion(0, tamanoBytes - 1);
+
+                long long posicionLogica = distribucionPosicion(generador);
+                long long tamanoBloque = static_cast<long long>(disco.tamanoBloqueKB) * 1024;
+                long long espacioDatos = tamanoBloque;
+
+                if (mecanismo == 2)
+                {
+                    espacioDatos -= 8;
+                }
+
+                long long bloqueLogico = posicionLogica / espacioDatos;
+                long long bloqueFisico = 0;
+                long long accesos = 0;
+
+                if (mecanismo == 1)
+                {
+                    bloqueFisico = archivo.bloques[0] + bloqueLogico;
+                    accesos = 1;
+                }
+                else if (mecanismo == 2)
+                {
+                    for (long long i = 0; i <= bloqueLogico; i++)
+                    {
+                        bloqueFisico = archivo.bloques[i];
+                        accesos++;
+                    }
+                }
+                else if (mecanismo == 3)
+                {
+                    long long referenciasPorIndice = tamanoBloque / 8;
+                    long long numeroIndice = bloqueLogico / referenciasPorIndice;
+                    long long entradaIndice = bloqueLogico % referenciasPorIndice;
+
+                    cout << "\nBloque indice consultado: "<< archivo.bloquesIndice[numeroIndice] << endl;
+
+                    bloqueFisico = archivo.bloques[
+                    numeroIndice * referenciasPorIndice + entradaIndice];
+
+                    accesos = 2;
+                }
+
+                totalAccesos += accesos;
+                cantidadAccesos++;
+
+                cout << "\n=== Acceso a archivo ===" << endl;
+                cout << "ID: " << archivo.id << endl;
+                cout << "Posicion logica: " << posicionLogica << " bytes" << endl;
+                cout << "Bloque logico: " << bloqueLogico << endl;
+                cout << "Bloque fisico: " << bloqueFisico << endl;
+                cout << "Accesos necesarios: " << accesos << endl;
+            }
+
+            proximoAcceso += std::chrono::seconds(5);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     cout << "\n=== Simulacion finalizada ===" << endl;
+    cout << "Solicitudes de acceso realizadas: " << cantidadAccesos << endl;
+    cout << "Total de accesos al disco: " << totalAccesos << endl;
 
     return 0;
 
