@@ -3,6 +3,8 @@
 #include "asignacion/asignacion.h"
 #include <random>
 #include <vector>
+#include <chrono>
+#include <thread>
 using namespace std;
 
 int main()
@@ -99,59 +101,78 @@ int main()
     std::vector<Archivo> archivos;
 
     int siguienteId = 1;
-    int tamanoArchivo = distribucion(generador);
 
-    Archivo nuevoArchivo = {};
-    bool creado = false;
+    auto inicio = std::chrono::steady_clock::now();
+    auto proximaCreacion = inicio + std::chrono::seconds(2);
 
-    if (mecanismo == 1)
+    while (true)
     {
-        creado = asignarContigua(disco, nuevoArchivo, siguienteId, tamanoArchivo);
-    }
-    else if (mecanismo == 2)
-    {
-        creado = asignarEnlazada(disco, nuevoArchivo, siguienteId, tamanoArchivo);
-    }
-    else if (mecanismo == 3)
-    {
-        creado = asignarIndexada(disco, nuevoArchivo, siguienteId, tamanoArchivo);
-    }
+        auto ahora = std::chrono::steady_clock::now();
 
-    if (creado)
-    {
-        archivos.push_back(nuevoArchivo);
-        siguienteId++;
-
-        cout << "\n=== Archivo creado ===" << endl;
-        cout << "ID: " << nuevoArchivo.id << endl;
-        cout << "Tamano: " << nuevoArchivo.tamanoKB << " KB" << endl;
-
-        cout << "Bloques de datos: ";
-        for (long long bloque : nuevoArchivo.bloques)
+        if (ahora >= proximaCreacion)
         {
-            cout << bloque << " ";
-        }
-        cout << endl;
+            int tamanoArchivo = distribucion(generador);
 
-        if (!nuevoArchivo.bloquesIndice.empty())
-        {
-            cout << "Bloques indice: ";
-            for (long long bloque : nuevoArchivo.bloquesIndice)
+            Archivo nuevoArchivo = {};
+            bool creado = false;
+
+            if (mecanismo == 1)
+            {
+                creado = asignarContigua(disco, nuevoArchivo, siguienteId, tamanoArchivo);
+            }
+            else if (mecanismo == 2)
+            {
+                creado = asignarEnlazada(disco, nuevoArchivo, siguienteId, tamanoArchivo);
+            }
+            else if (mecanismo == 3)
+            {
+                creado = asignarIndexada(disco, nuevoArchivo, siguienteId, tamanoArchivo);
+            }
+
+            if (!creado)
+            {
+                cout << "\nNo se pudo crear el archivo." << endl;
+                cout << "Tamano solicitado: " << tamanoArchivo << " KB" << endl;
+                cout << "Bloques libres restantes: " << contarBloquesLibres(disco) << endl;
+                break;
+            }
+
+            archivos.push_back(nuevoArchivo);
+            siguienteId++;
+
+            cout << "\n=== Archivo creado ===" << endl;
+            cout << "ID: " << nuevoArchivo.id << endl;
+            cout << "Tamano: " << nuevoArchivo.tamanoKB << " KB" << endl;
+
+            cout << "Bloques de datos: ";
+            for (long long bloque : nuevoArchivo.bloques)
             {
                 cout << bloque << " ";
             }
             cout << endl;
+
+            if (!nuevoArchivo.bloquesIndice.empty())
+            {
+                cout << "Bloques indice: ";
+                for (long long bloque : nuevoArchivo.bloquesIndice)
+                {
+                    cout << bloque << " ";
+                }
+                cout << endl;
+            }
+
+            cout << "Archivos almacenados: " << archivos.size() << endl;
+            cout << "Bloques libres restantes: " << contarBloquesLibres(disco) << endl;
+
+            proximaCreacion += std::chrono::seconds(2);
         }
 
-        cout << "Archivos almacenados: "
-             << archivos.size() << endl;
-    }
-    else
-    {
-        cout << "\nNo se pudo crear el archivo." << endl;
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    cout << "Bloques libres restantes: " << contarBloquesLibres(disco) << endl;
+    cout << "\n=== Simulacion finalizada ===" << endl;
 
     return 0;
+
 }
