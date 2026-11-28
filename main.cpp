@@ -101,9 +101,11 @@ int main()
     std::vector<Archivo> archivos;
 
     int siguienteId = 1;
+    int archivosEliminados = 0;
 
     auto inicio = std::chrono::steady_clock::now();
     auto proximaCreacion = inicio + std::chrono::seconds(2);
+    auto proximaEliminacion = inicio + std::chrono::seconds(30);
 
     while (true)
     {
@@ -167,6 +169,39 @@ int main()
             proximaCreacion += std::chrono::seconds(2);
         }
 
+        if (ahora >= proximaEliminacion)
+        {
+            if (!archivos.empty())
+            {
+                std::uniform_int_distribution<int> distribucionEliminacion(
+                    0, static_cast<int>(archivos.size()) - 1);
+
+                int posicion = distribucionEliminacion(generador);
+
+                int idEliminado = archivos[posicion].id;
+
+                for (long long bloque : archivos[posicion].bloques)
+                {
+                    disco.bloques[bloque] = 0;
+                }
+
+                for (long long bloque : archivos[posicion].bloquesIndice)
+                {
+                    disco.bloques[bloque] = 0;
+                }
+
+                archivos.erase(archivos.begin() + posicion);
+                archivosEliminados++;
+
+                cout << "\n=== Archivo eliminado ===" << endl;
+                cout << "ID: " << idEliminado << endl;
+                cout << "Archivos eliminados: " << archivosEliminados << endl;
+                cout << "Archivos almacenados: " << archivos.size() << endl;
+                cout << "Bloques libres restantes: " << contarBloquesLibres(disco) << endl;
+            }
+
+            proximaEliminacion += std::chrono::seconds(5);
+        }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
